@@ -34,7 +34,7 @@ class MonteCarlo():
     def df(self):
         return self._df
 
-    def fit(self):
+    def fit(self) -> None:
         # Deep copying DataFrame and calculating covariance matrix
         orthog_disturbances_df = self.df.copy(deep=True)
         array = orthog_disturbances_df.to_numpy()
@@ -61,7 +61,7 @@ class MonteCarlo():
         # Calcutating conditional volatility
         conditional_volatility_df = pd.DataFrame()
         for i in range(len(orthog_disturbances_df.columns)):
-            conditional_volatility_df[i] = garch_fits[i].conditional_volatility
+            conditional_volatility_df[i] = garch_fits.get(i).conditional_volatility
 
         # calculating orthogonal disturbances normalized by GARCH standard deviation
         norm_orthog_disturbances_df = (
@@ -78,7 +78,8 @@ class MonteCarlo():
                 norm_orthog_disturbances_df,
                 conditional_volatility_df,
                 garch_models,
-                garch_fits
+                garch_fits,
+                self.df.columns
             )
         )
 
@@ -148,7 +149,8 @@ class MonteCarloResult():
         norm_orthog_disturbances_df,
         conditional_volatility_df,
         garch_models,
-        garch_fits
+        garch_fits,
+        colnames
         ):
         self._combination_matrix = combination_matrix
         self._orthog_disturbances_df = orthog_disturbances_df
@@ -156,10 +158,11 @@ class MonteCarloResult():
         self._conditional_volatility_df = conditional_volatility_df
         self._garch_models = garch_models
         self._garch_fits = garch_fits
+        self._colnames = colnames
 
     @property
-    def scaling_matrix(self):
-        return self._scaling_matrix
+    def combination_matrix(self):
+        return self._combination_matrix
 
     @property
     def orthog_disturbances_df(self):
@@ -173,12 +176,15 @@ class MonteCarloResult():
     def conditional_volatility_df(self):
         return self._conditional_volatility_df
 
-    def forecast(self, n_periods: int) -> pd.DataFrame:
+    def forecast(self, n_periods: int, n_simulations) -> pd.DataFrame:
         """
-        UNDER CONSTRUCTION
+        UNDER CONSTRUCION
+        Docstring will come
         """
-        # Forecast conditional volatility n_periods ahead in time
+
         conditional_volatility_forecast_df = pd.DataFrame()
+
+        # Make GARCH forecast of volatility
         for i, fit in self._garch_fits.items():
             conditional_volatility_forecast_df[i] = (
                 fit
@@ -187,4 +193,38 @@ class MonteCarloResult():
                 .T
             )
 
-        return conditional_volatility_forecast_df
+        # Set index = 0, 1, 2, ...
+        conditional_volatility_forecast_df.index = range(n_periods)
+
+        # Calculate simulations
+        simulations = {}
+
+        # Draw from normalized orthogonal disturbances
+        for i in range(n_simulations):
+            orthog_disturbance_draws = pd.DataFrame()
+            for j, col in enumerate(self.norm_orthog_disturbances_df.columns):
+                norm_orthog_disturbance_draw = (
+                    pd.Series(
+                        np.random.choice(
+                            self.norm_orthog_disturbances_df[col],
+                            size=n_periods,
+                            replace=True
+                            ),
+                        index=range(n_periods)
+                    )
+                )
+
+                # Introduce forecast of conditional volatility
+                orthog_disturbance_draw = (
+                    norm_orthog_disturbance_draw
+                    *conditional_volatility_forecast_df[j]
+                )
+
+                # Store in DataFrame
+                orthog_disturbance_draws[col] = orthog_disturbance_draw
+
+            # Weigh together orthogonal disturbances to get origianl
+            simulations[i] = orthog_disturbance_draws.dot(self.combination_matrix)
+            simulations.get(i).columns = self._colnames
+
+        return simulations
