@@ -29,6 +29,7 @@ class MonteCarlo():
     """
     def __init__(self, df: pd.DataFrame):
         self._df = df
+        self._df_mean = df.mean(axis=0)
 
     @property
     def df(self):
@@ -36,7 +37,7 @@ class MonteCarlo():
 
     def fit(self) -> None:
         # Deep copying DataFrame and calculating covariance matrix
-        orthog_disturbances_df = self.df.copy(deep=True)
+        orthog_disturbances_df = self.df-self._df_mean
         array = orthog_disturbances_df.to_numpy()
         covariance_matrix = np.cov(array.T)
 
@@ -64,11 +65,7 @@ class MonteCarlo():
             conditional_volatility_df[i] = garch_fits.get(i).conditional_volatility
 
         # calculating orthogonal disturbances normalized by GARCH standard deviation
-        norm_orthog_disturbances_df = (
-            (orthog_disturbances_df-orthog_disturbances_df.mean(axis=0))
-            /conditional_volatility_df
-            +orthog_disturbances_df.mean(axis=0)
-        )
+        norm_orthog_disturbances_df = orthog_disturbances_df/conditional_volatility_df
 
         # Returning MonteCarloResult object with all necessary stuff
         return (
@@ -79,6 +76,7 @@ class MonteCarlo():
                 conditional_volatility_df,
                 garch_models,
                 garch_fits,
+                self._df_mean,
                 self.df.columns
             )
         )
@@ -150,6 +148,7 @@ class MonteCarloResult():
         conditional_volatility_df,
         garch_models,
         garch_fits,
+        mean_df,
         colnames
         ):
         self._combination_matrix = combination_matrix
@@ -158,6 +157,7 @@ class MonteCarloResult():
         self._conditional_volatility_df = conditional_volatility_df
         self._garch_models = garch_models
         self._garch_fits = garch_fits
+        self._mean_df = mean_df
         self._colnames = colnames
 
     @property
@@ -226,5 +226,6 @@ class MonteCarloResult():
             # Weigh together orthogonal disturbances to get origianl
             simulations[i] = orthog_disturbance_draws.dot(self.combination_matrix)
             simulations.get(i).columns = self._colnames
+            simulations[i] = simulations[i]+self._mean_df
 
         return simulations
