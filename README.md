@@ -1,7 +1,7 @@
 # monte-carlo-simulator
 
 [Notebook](https://github.com/magnushelliesen/monte-carlo-simulator/blob/main/monte-carlo-simulator.ipynb)
-that implements a 
+that implements a homemade
 [class](https://github.com/magnushelliesen/monte-carlo-simulator/blob/main/monte_carlo/monte_carlo.py)
 which performs Monte Carlo simulations (using [eigen decomposition](https://en.wikipedia.org/wiki/Eigendecomposition_of_a_matrix)) for a number of timeseries that may or may not co-vary.
 
