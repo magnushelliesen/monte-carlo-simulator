@@ -1,3 +1,7 @@
+"""
+By: Magnus Kvåle Helliesen
+"""
+
 import pandas as pd
 import numpy as np
 from numpy.linalg import eig, inv
