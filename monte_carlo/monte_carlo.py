@@ -176,10 +176,31 @@ class MonteCarloResult():
     def conditional_volatility_df(self):
         return self._conditional_volatility_df
 
-    def forecast(self, n_periods: int, n_simulations) -> pd.DataFrame:
+    def simulate(self, n_periods: int, n_simulations) -> dict:
         """
-        UNDER CONSTRUCION
-        Docstring will come
+        Simulate time series data based on the Monte Carlo simulation using GARCH models.
+
+        Parameters
+        ----------
+        n_periods : int
+            Number of periods to simulate.
+
+        n_simulations : int
+            Number of simulations to generate.
+
+        Returns
+        -------
+        dict
+            A dictionary containing simulated time series data based on the specified
+            number of periods and simulations.
+
+        Notes
+        -----
+        This method conducts Monte Carlo simulations based on the previously fitted GARCH models
+        and normalized orthogonal disturbances. It generates multiple simulations of time series
+        data for the specified number of periods by drawing from the distributions of the fitted
+        GARCH models and the normalized orthogonal disturbances. The resulting simulations
+        are stored in a dictionary with keys representing different simulation runs.
         """
 
         conditional_volatility_forecast_df = pd.DataFrame()
