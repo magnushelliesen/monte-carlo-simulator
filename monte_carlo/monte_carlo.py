@@ -107,7 +107,7 @@ class MonteCarloResult:
             self,
             n_periods: int,
             n_simulations: int
-            ) -> dict:
+            ) -> Dict[int, pd.DataFrame]:
         """
         Simulate time series data based on the Monte Carlo simulation using GARCH models.
 
